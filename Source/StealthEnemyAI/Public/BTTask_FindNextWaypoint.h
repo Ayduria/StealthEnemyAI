@@ -19,6 +19,6 @@ public:
 
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
+private:
 	static bool IsEndOfPathReached(int PatrolIndex, int ArraySize, bool bIsReversingPatrol);
-	
 };

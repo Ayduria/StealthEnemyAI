@@ -69,43 +69,38 @@ void AStealthEnemyAIController::SetupPerceptionSystem()
 	GetPerceptionComponent()->OnTargetPerceptionUpdated.AddDynamic(this, &AStealthEnemyAIController::OnTargetDetected);
 }
 
-void AStealthEnemyAIController::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
 void AStealthEnemyAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
 	AStealthEnemyAICharacter* EnemyPawn = Cast<AStealthEnemyAICharacter>(InPawn);
 	checkf(EnemyPawn, TEXT("Controller is not possessing a pawn"));
-
 	ControlledPawn = EnemyPawn;
-	GetBlackboard()->SetValueAsObject(BBKeys::SelfActor, Cast<UObject>(ControlledPawn));
 
 	// Initialize blackboard and start behavior tree
-	BlackboardComponent->InitializeBlackboard(*ControlledPawn->BehaviorTree->BlackboardAsset);
-	BehaviorTreeComponent->StartTree(*ControlledPawn->BehaviorTree);
+	BlackboardComponent->InitializeBlackboard(*EnemyPawn->BehaviorTree->BlackboardAsset);
+	BehaviorTreeComponent->StartTree(*EnemyPawn->BehaviorTree);
 
 	// Set base values in blackboard
-	GetBlackboard()->SetValueAsEnum(BBKeys::Behavior, static_cast<uint8>(ControlledPawn->GetBehavior()));
+	GetBlackboard()->SetValueAsObject(BBKeys::SelfActor, Cast<UObject>(EnemyPawn));
+	GetBlackboard()->SetValueAsEnum(BBKeys::Behavior, static_cast<uint8>(EnemyPawn->GetBehavior()));
 
 	// If enemy has Stationary behavior, set Guarding state and save base position and rotation
 	if (IsEnemyStationary())
 	{
 		BaseState = EEnemyState::Guarding;
-		BasePosition = ControlledPawn->GetActorLocation();
-		BaseRotation = ControlledPawn->GetActorRotation();
+		BasePosition = EnemyPawn->GetActorLocation();
+		BaseRotation = EnemyPawn->GetActorRotation();
 	} else // If enemy has Patrol behavior, set Patrolling state
 	{
 		BaseState = EEnemyState::Patrolling;
 	}
 
 	GetBlackboard()->SetValueAsEnum(BBKeys::State, static_cast<uint8>(BaseState));
+	GetBlackboard()->SetValueAsBool(BBKeys::SmoothPatrol, EnemyPawn->IsPatrolSmooth());
 
-	ControlledPawn->SetSpeedToNormal();
-	ControlledPawn->Multicast_SetConeMaterial(DefaultConeMaterial);
+	EnemyPawn->SetSpeedToNormal();
+	EnemyPawn->Multicast_SetConeMaterial(DefaultConeMaterial);
 }
 
 void AStealthEnemyAIController::OnTargetDetected(AActor* Actor, FAIStimulus const Stimulus)
@@ -123,31 +118,6 @@ void AStealthEnemyAIController::OnTargetDetected(AActor* Actor, FAIStimulus cons
 		else if (Stimulus.Type == SightID)
 			StartChase(Cast<ACharacter>(Actor));
 	}
-}
-
-UBlackboardComponent* AStealthEnemyAIController::GetBlackboard() const
-{
-	return BlackboardComponent;
-}
-
-int AStealthEnemyAIController::GetPatrolIndex() const
-{
-	return WaypointIndex;
-}
-
-void AStealthEnemyAIController::SetPatrolIndex(const int Index)
-{
-	WaypointIndex = Index;
-}
-
-bool AStealthEnemyAIController::IsReversingPatrol() const
-{
-	return bReversingPatrol;
-}
-
-void AStealthEnemyAIController::ToggleReversePatrol()
-{
-	bReversingPatrol = !bReversingPatrol;
 }
 
 void AStealthEnemyAIController::FaceCorrectDirection(const FRotator Rotation)
@@ -176,16 +146,6 @@ void AStealthEnemyAIController::StartInvestigating()
 FVector AStealthEnemyAIController::GetNextWaypointLocation() const
 {
 	return IsEnemyStationary() ? FVector::ZeroVector : GetBlackboard()->GetValueAsVector(BBKeys::NextWaypointLocation);
-}
-
-FVector AStealthEnemyAIController::GetBasePosition() const
-{
-	return BasePosition;
-}
-
-FRotator AStealthEnemyAIController::GetBaseRotation() const
-{
-	return BaseRotation;
 }
 
 bool AStealthEnemyAIController::IsEnemyStationary() const

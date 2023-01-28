@@ -22,23 +22,22 @@ class STEALTHENEMYAI_API AStealthEnemyAIController : public AAIController
 public:
 	AStealthEnemyAIController();
 
-	virtual void BeginPlay() override;
-	virtual void OnPossess(APawn* InPawn) override;;
-	UBlackboardComponent* GetBlackboard() const;
+	virtual void OnPossess(APawn* InPawn) override;
+	UBlackboardComponent* GetBlackboard() const { return BlackboardComponent; }
 
 	// Getter and setter for patrol waypoints index
-	int GetPatrolIndex() const;
-	void SetPatrolIndex(int Index);
+	int GetPatrolIndex() const { return WaypointIndex; }
+	void SetPatrolIndex(const int Index) { WaypointIndex = Index; }
 
 	// Getter and setter for patrol direction boolean
-	bool IsReversingPatrol() const;
-	void ToggleReversePatrol();
+	bool IsReversingPatrol() const { return bReversingPatrol; }
+	void ToggleReversePatrol() { bReversingPatrol = !bReversingPatrol; }
 
 	// Getters for stationary enemy base position and rotation
 	UFUNCTION(BlueprintCallable)
-	FVector GetBasePosition() const;
+	FVector GetBasePosition() const { return BasePosition; }
 	UFUNCTION(BlueprintCallable)
-	FRotator GetBaseRotation() const;
+	FRotator GetBaseRotation() const { return BaseRotation; }
 
 	/** Utility function to reset a stationary enemy's rotation
 	 * Used to face correct direction when resuming guarding duty */
@@ -78,6 +77,7 @@ public:
 	void SetNextWaypointLocation(FVector Location) const;
 
 private:
+
 	/** The component that starts the behavior tree */
 	UPROPERTY(Transient)
 	UBehaviorTreeComponent* BehaviorTreeComponent;
@@ -103,16 +103,6 @@ private:
 
 	// Boolean switch that determines array traversal direction. Set by AI task
 	bool bReversingPatrol = false;
-
-	// Called when AI detects actor through a sense
-	UFUNCTION()
-	void OnTargetDetected(AActor* Actor, FAIStimulus const Stimulus);
-
-	// Called when AI has heard a noise through OnTargetDetected
-	void HeardNoise(FAIStimulus Stimulus);
-
-	// Initializes SightConfig parameters
-	void SetupPerceptionSystem();
 
 	/** The enemy pawn possessed by this controller */
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -146,6 +136,16 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,  Category = "Vision Cone", meta = (AllowPrivateAccess = "true"))
 	UMaterialInstance* ChaseConeMaterial;
+
+	// Called when AI detects actor through a sense
+	UFUNCTION()
+	void OnTargetDetected(AActor* Actor, FAIStimulus const Stimulus);
+
+	// Called when AI has heard a noise through OnTargetDetected
+	void HeardNoise(FAIStimulus Stimulus);
+
+	// Initializes SightConfig parameters
+	void SetupPerceptionSystem();
 
 	/** Sets enemy in Suspicious state
 	 * Called when enemy hears noise */

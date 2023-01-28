@@ -29,7 +29,7 @@ EBTNodeResult::Type UBTTask_FindNextWaypoint::ExecuteTask(UBehaviorTreeComponent
 		// Get waypoint index and behavior
 		int PatrolIndex = AIController->GetPatrolIndex();
 
-		if (bool bEndOfPathReached = IsEndOfPathReached(PatrolIndex, ArraySize, AIController->IsReversingPatrol()))
+		if (IsEndOfPathReached(PatrolIndex, ArraySize, AIController->IsReversingPatrol()))
 		{
 			// Set index according to patrol behavior
 			switch (EnemyPawn->GetPatrolMode())
@@ -52,19 +52,17 @@ EBTNodeResult::Type UBTTask_FindNextWaypoint::ExecuteTask(UBehaviorTreeComponent
 			AIController->SetPatrolIndex(PatrolIndex);
 		}
 
-		if(IsValid(EnemyPawn->PatrolWaypoints[PatrolIndex]))
-		{
-			// Set blackboard target key
-			AIController->SetNextWaypointLocation(EnemyPawn->PatrolWaypoints[PatrolIndex]->GetActorLocation());
+		checkf(EnemyPawn->PatrolWaypoints[PatrolIndex], TEXT("PatrolIndex is out of PatrolWaypoints array bounds"));
 
-			// Increment or decrement index depending on array traversal direction
-			AIController->IsReversingPatrol() ? PatrolIndex-- : PatrolIndex++;
-			AIController->SetPatrolIndex(PatrolIndex);
+		// Set blackboard target key
+		AIController->SetNextWaypointLocation(EnemyPawn->PatrolWaypoints[PatrolIndex]->GetActorLocation());
 
-			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-			return EBTNodeResult::Succeeded;
-		}
-		return EBTNodeResult::Failed;
+		// Increment or decrement index depending on array traversal direction
+		AIController->IsReversingPatrol() ? PatrolIndex-- : PatrolIndex++;
+		AIController->SetPatrolIndex(PatrolIndex);
+
+		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+		return EBTNodeResult::Succeeded;
 	}
 	// If waypoint array is empty, behavior is set to stationary
 	EnemyPawn->SetBehavior(EEnemyBehavior::Stationary);
